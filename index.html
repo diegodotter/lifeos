@@ -1,0 +1,227 @@
+
+
+<!DOCTYPE html>
+
+<html lang="de">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<meta name="theme-color" content="#111113">
+
+<title>LifeOS</title>
+
+<style>
+
+*{box-sizing:border-box}
+
+body{margin:0;background:#111113;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+
+main{max-width:650px;margin:auto;padding:24px 18px 110px;padding-top:calc(24px + env(safe-area-inset-top))}
+
+h1{font-size:36px;letter-spacing:-1.5px;margin:0}
+
+h2{font-size:20px;margin-top:28px}
+
+p{color:#98989f;line-height:1.5}
+
+header{display:flex;justify-content:space-between;align-items:center}
+
+button,a{-webkit-tap-highlight-color:transparent}
+
+button{font:inherit;color:white;border:0;cursor:pointer}
+
+.scan{display:flex;flex-direction:column;align-items:center;gap:12px;background:#007aff;border-radius:22px;padding:25px;text-decoration:none;color:white;font-weight:600;margin-top:25px}
+
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+.tile{background:#242427;border-radius:20px;padding:20px;text-align:left;min-height:108px;display:flex;flex-direction:column;gap:16px;font-weight:600}
+
+svg{width:29px;height:29px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+nav{position:fixed;bottom:0;left:0;right:0;background:#1c1c1eee;backdrop-filter:blur(20px);display:flex;justify-content:space-around;border-top:1px solid #333;padding:13px 0 calc(13px + env(safe-area-inset-bottom))}
+
+nav button{background:none;display:flex;flex-direction:column;align-items:center;gap:5px;color:#aaa;font-size:11px}
+
+nav svg{width:24px;height:24px}
+
+.settings{background:none;color:#aaa}
+
+.panel{background:#242427;padding:20px;border-radius:20px;margin-top:20px}
+
+.back{background:#343438;padding:10px 16px;border-radius:12px}
+
+</style>
+
+</head>
+
+<body>
+
+<main>
+
+<header>
+
+<h1>LifeOS</h1>
+
+<button class="settings" onclick="openPage('Einstellungen')" id="settings"></button>
+
+</header>
+
+<p>Deine persönliche Schaltzentrale</p>
+
+<section id="home">
+
+<a class="scan" href="shortcuts://run-shortcut?name=LifeOS%20Belegscanner">
+
+<svg viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M3 12h18"/></svg>
+
+Dokument erfassen
+
+</a>
+
+<h2>Übersicht</h2>
+
+<div class="grid" id="grid"></div>
+
+</section>
+
+<section id="detail" hidden>
+
+<h2 id="heading"></h2>
+
+<div class="panel">
+
+<p id="description"></p>
+
+<p>Datenanbindung noch nicht eingerichtet.</p>
+
+</div>
+
+<br>
+
+<button class="back" onclick="goHome()">Zurück zur Übersicht</button>
+
+</section>
+
+</main>
+
+<nav id="navigation"></nav>
+
+<script>
+
+const icons={
+
+house:'<path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-8h6v8"/>',
+
+user:'<circle cx="12" cy="7" r="4"/><path d="M4 21v-3a8 8 0 0 1 16 0v3"/>',
+
+car:'<path d="m5 9 2-5h10l2 5M3 9h18v9H3zM5 18v3M19 18v3M6 13h2M16 13h2"/>',
+
+bell:'<path d="M18 8a6 6 0 0 0-12 0c0 6-3 7-3 9h18c0-2-3-3-3-9M10 21h4"/>',
+
+folder:'<path d="M3 5h7l2 3h9v12H3z"/>',
+
+tasks:'<path d="m3 6 2 2 4-4M12 6h9M3 12l2 2 4-4M12 12h9M3 18l2 2 4-4M12 18h9"/>',
+
+flag:'<path d="M4 22V3M4 4c6-5 10 5 16 0v12c-6 5-10-5-16 0"/>',
+
+video:'<rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 6 3-6 3z"/>',
+
+mail:'<rect x="2" y="4" width="20" height="16" rx="3"/><path d="m2 6 10 8L22 6"/>',
+
+calendar:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 2v6M17 2v6M3 11h18"/>',
+
+settings:'<circle cx="12" cy="12" r="4"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4M4 4l3 3M17 17l3 3M4 20l3-3M17 7l3-3"/>'
+
+};
+
+const items=[
+
+['Airbnb','house','#ff5a60','Buchungen, Einnahmen, Ausgaben und Rechnungen.'],
+
+['Privat','user','#409cff','Private Belege und Unterlagen.'],
+
+['Fahrzeuge','car','#a1a1aa','Fahrzeuge, Wartung und Kosten.'],
+
+['Erinnerungen','bell','#ff9f0a','Erinnerungen und Verpflichtungen.'],
+
+['Dokumente','folder','#409cff','Zentrales Dokumentenarchiv.'],
+
+['Aufgaben','tasks','#30d158','Offene Erledigungen.'],
+
+['Motorsport','flag','#ff453a','Trackdays und Drift-Events.'],
+
+['Social Media','video','#ff453a','Content und Statistiken.'],
+
+['E-Mail','mail','#409cff','Posteingang und Korrespondenz.'],
+
+['Kalender','calendar','#bf5af2','Termine und Fristen.']
+
+];
+
+function svg(name,color){
+
+return '<svg viewBox="0 0 24 24" style="color:'+color+'">'+icons[name]+'</svg>';
+
+}
+
+items.forEach(([name,icon,color])=>{
+
+const b=document.createElement('button');
+
+b.className='tile';
+
+b.innerHTML=svg(icon,color)+name;
+
+b.onclick=()=>openPage(name);
+
+document.getElementById('grid').appendChild(b);
+
+});
+
+function openPage(name){
+
+document.getElementById('home').hidden=true;
+
+document.getElementById('detail').hidden=false;
+
+document.getElementById('heading').textContent=name;
+
+document.getElementById('description').textContent=items.find(x=>x[0]===name)?.[3]||'Verbindungen und Konfiguration.';
+
+window.scrollTo(0,0);
+
+}
+
+function goHome(){
+
+document.getElementById('home').hidden=false;
+
+document.getElementById('detail').hidden=true;
+
+}
+
+document.getElementById('settings').innerHTML=svg('settings','#aaa');
+
+[['Home','house'],['Dateien','folder'],['Kalender','calendar'],['Settings','settings']].forEach(([name,icon])=>{
+
+const b=document.createElement('button');
+
+b.innerHTML=svg(icon,name==='Home'?'#409cff':'#aaa')+name;
+
+b.onclick=()=>name==='Home'?goHome():openPage(name==='Dateien'?'Dokumente':name==='Settings'?'Einstellungen':name);
+
+document.getElementById('navigation').appendChild(b);
+
+});
+
+</script>
+
+</body>
+
+</html>
